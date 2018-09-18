@@ -18,7 +18,7 @@ def add_path(path):
 this_dir = osp.dirname(__file__)
 
 #Add caffe to PYTHONPATH
-caffe_path = '/home/lear/xpeng/code/caffe-fast-rcnn-faster-rcnn-upstream-33f2445/python'
+caffe_path = '/workspace/action-faster-rcnn/caffe-fast-rcnn-faster-rcnn-upstream-33f2445/python'
 assert osp.exists(caffe_path)
 add_path(caffe_path)
 
@@ -45,13 +45,13 @@ def nms2d(boxes, overlap=0.3):
         indices[counter] = i
         counter += 1
         xx1 = np.maximum(x1[i],x1[I[:-1]])
-        yy1 = np.maximum(y1[i],y1[I[:-1]])        
+        yy1 = np.maximum(y1[i],y1[I[:-1]])
         xx2 = np.minimum(x2[i],x2[I[:-1]])
-        yy2 = np.minimum(y2[i],y2[I[:-1]]) 
+        yy2 = np.minimum(y2[i],y2[I[:-1]])
         inter = np.maximum(0.0,xx2-xx1+1)*np.maximum(0.0,yy2-yy1+1)
         iou = inter / ( areas[i]+areas[I[:-1]]-inter)
         I = I[np.where(iou<=overlap)[0]]
-    return indices[:counter]    
+    return indices[:counter]
 
 def area2d(b):
     return (b[:,2]-b[:,0]+1)*(b[:,3]-b[:,1]+1)
@@ -62,41 +62,41 @@ def overlap2d(b1, b2):
     width = np.maximum(0, xmax-xmin)
     ymin = np.maximum( b1[:,1], b2[:,1] )
     ymax = np.minimum( b1[:,3]+1, b2[:,3]+1)
-    height = np.maximum(0, ymax-ymin)   
-    return width*height          
+    height = np.maximum(0, ymax-ymin)
+    return width*height
 
 def iou2d(b1, b2):
     if b1.ndim == 1: b1 = b1[None,:]
     if b2.ndim == 1: b2 = b2[None,:]
     assert b2.shape[0]==1
     o = overlap2d(b1, b2)
-    return o / ( area2d(b1) + area2d(b2) - o ) 
-    
-        
+    return o / ( area2d(b1) + area2d(b2) - o )
+
+
 def iou3d(b1, b2):
     assert b1.shape[0]==b2.shape[0]
     assert np.all(b1[:,0]==b2[:,0])
     o = overlap2d(b1[:,1:5],b2[:,1:5])
-    return np.mean( o/(area2d(b1[:,1:5])+area2d(b2[:,1:5])-o) )  
+    return np.mean( o/(area2d(b1[:,1:5])+area2d(b2[:,1:5])-o) )
     #return np.mean(np.array([iou2d(b1[i,1:5],b2[i,1:5]) for i in range(b1.shape[0])]))
-    
+
 def iout(b1, b2):
     tmin = max(b1[0,0], b2[0,0])
     tmax = min(b1[-1,0], b2[-1,0])
-    if tmax<=tmin: return 0.0    
+    if tmax<=tmin: return 0.0
     temporal_inter = tmax-tmin+1
-    temporal_union = max(b1[-1,0], b2[-1,0]) - min(b1[0,0], b2[0,0]) + 1 
+    temporal_union = max(b1[-1,0], b2[-1,0]) - min(b1[0,0], b2[0,0]) + 1
     return temporal_inter / temporal_union
-        
+
 def iou3dt(b1, b2):
 
     tmin = max(b1[0,0], b2[0,0])
     tmax = min(b1[-1,0], b2[-1,0])
-    if tmax<=tmin: return 0.0    
+    if tmax<=tmin: return 0.0
     temporal_inter = tmax-tmin+1
-    temporal_union = max(b1[-1,0], b2[-1,0]) - min(b1[0,0], b2[0,0]) + 1 
+    temporal_union = max(b1[-1,0], b2[-1,0]) - min(b1[0,0], b2[0,0]) + 1
     return iou3d( b1[np.where(b1[:,0]==tmin)[0][0]:np.where(b1[:,0]==tmax)[0][0]+1,:] , b2[np.where(b2[:,0]==tmin)[0][0]:np.where(b2[:,0]==tmax)[0][0]+1,:]  ) * temporal_inter / temporal_union
-     
+
 def nms3dt_given_ious(scores, ious, overlap=0.5):
     if scores.size==0: return np.array([],dtype=np.int32)
     I = np.argsort(scores)

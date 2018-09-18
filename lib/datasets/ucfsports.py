@@ -16,29 +16,29 @@ class ucfsports(imdb):
         else:
             self._image_set = './action_experiments/listfiles/' + image_set + '.testlist'
 
-        self._annot_path = '/home/lear/xpeng/data/ucf_sports_actions/UCFsports/data' # you only have annotations in RGB data folder
+        self._annot_path = '/workspace/data/ucf_sports_actions/UCFsports/data' # you only have annotations in RGB data folder
 
         if 'RGB' in image_set and 'FLOW' in image_set: # for 2stream fusion
-            self._data_path = '/home/lear/xpeng/data/ucf_sports_actions/broxflow'
+            self._data_path = '/workspace/data/ucf_sports_actions/broxflow'
         else:
             self._MOD = image_set.split('_')[1]
             self._LEN = image_set.split('_')[2]
             self._data_path = None
-            if self._MOD=='RGB': self._data_path = '/home/lear/xpeng/data/ucf_sports_actions/UCFsports/data'
-            if self._MOD=='FLOW': self._data_path = '/home/lear/xpeng/data/ucf_sports_actions/broxflow'
+            if self._MOD=='RGB': self._data_path = '/workspace/data/ucf_sports_actions/UCFsports/data'
+            if self._MOD=='FLOW': self._data_path = '/workspace/data/ucf_sports_actions/broxflow'
 
-        self._classes = ('__background__', 
-                         'Diving', 'Golf', 'Kicking', 'Lifting', 'Riding', 
+        self._classes = ('__background__',
+                         'Diving', 'Golf', 'Kicking', 'Lifting', 'Riding',
                          'Run', 'SkateBoarding', 'Swing1', 'Swing2', 'Walk')
 
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_index = self._load_image_set_index()
 
         self.videos = [l.split() for l in file(os.path.join(self._annot_path,'videos.txt'))] # videos include train/test info, video names, etc.
-        self.test_videos = [v[0] for v in self.videos if v[2]=="test"] 
+        self.test_videos = [v[0] for v in self.videos if v[2]=="test"]
         self.video_to_label = {v[0]: self._class_to_ind[v[1]] for v in self.videos }
 
-        self._roidb_handler = self.gen_roidb
+        self._roidb_handler = self.gt_roidb
 
     def image_path_at(self, i):
         """
@@ -50,7 +50,7 @@ class ucfsports(imdb):
             pass
 
     def get_human_annot_file(self,videoname):
-        return os.path.join(self._annot_path, videoname, "humans.txt") 
+        return os.path.join(self._annot_path, videoname, "humans.txt")
 
 
     def get_human_annot(self,videoname):
@@ -73,14 +73,14 @@ class ucfsports(imdb):
         return image_index
 
 
-    def gen_roidb(self):
+    def gt_roidb(self):
         cache_file = self.cache_path
         if os.path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
                 roidb = cPickle.load(fid)
             print '{} gt roidb loaded from {}'.format(self.name, cache_file)
             return roidb
-        
+
         roidb = [self._load_ucfsports_annotation(index)
                     for index in self.image_index]
         with open(cache_file, 'wb') as fid:
@@ -90,7 +90,7 @@ class ucfsports(imdb):
 
     def _load_ucfsports_annotation(self, index):
         """
-        Load image and bounding boxes info 
+        Load image and bounding boxes info
         """
         index = index.split(',')[-1] # to support 2 stream filelist input
         videoname = index.split('/')[0]
@@ -109,7 +109,7 @@ class ucfsports(imdb):
             cls = self.video_to_label[videoname]
             gt_classes[ix] = cls
             overlaps[ix, cls] = 1.0
-       
+
         overlaps = scipy.sparse.csr_matrix(overlaps)
 
         return {'boxes' : boxes,
